@@ -9,14 +9,11 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include "syncChannel.h"
 
 #pragma comment(lib,"Ws2_32.lib")
 
-std::mutex _mtx;
-std::condition_variable _cond;
-
-bool _isReady = false;
-
+static SyncChannel* s_syncChannel = nullptr;
 
 void recvThread() {
 	SOCKET sock;
@@ -43,16 +40,8 @@ void recvThread() {
 	// TCPクライアントからの接続要求を受け付ける
 	len = sizeof(client);
 	sock = accept(sock, (struct sockaddr *)&client, &len);
-	{
-		std::lock_guard<std::mutex> lock(_mtx);
-		_isReady = true;
-	}
-	_cond.notify_one();
-
-	{
-		std::unique_lock<std::mutex> uniq_lk(_mtx); // ここでロックされる
-		_cond.wait(uniq_lk, [] { return !_isReady; });
-	}
+	s_syncChannel->ackOn();
+	s_syncChannel->waitStbOn();
 
 	while (true) {
 		printf("[%s] start\n", __func__);
@@ -62,16 +51,9 @@ void recvThread() {
 		if (n <= 0)
 			break;
 		printf("[%s] %d, %s\n", __func__ ,n, buf);
-		{
-			std::lock_guard<std::mutex> lock(_mtx);
-			_isReady = true;
-		}
-		_cond.notify_one();
+		s_syncChannel->ackOn();
 		printf("[%s]:%d wakeup send\n", __func__, __LINE__);
-		{
-			std::unique_lock<std::mutex> uniq_lk(_mtx); // ここでロックされる
-			_cond.wait(uniq_lk, [] { return !_isReady; });
-		}
+		s_syncChannel->waitStbOn();
 		printf("[%s]:%d wakeup recv\n", __func__, __LINE__);
 		printf("[%s] end\n", __func__);
 	}
@@ -82,10 +64,7 @@ void sendThread() {
 	SOCKET sock;
 	char buf[32];
 
-	{
-		std::unique_lock<std::mutex> uniq_lk(_mtx); // ここでロックされる
-		_cond.wait(uniq_lk, [] { return _isReady; });
-	}
+	s_syncChannel->waitAckOn();
 
 	// ソケットの作成
 	sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -101,29 +80,17 @@ void sendThread() {
 		int nLastErr = WSAGetLastError();
 		printf("[%s]:%d ret=%d\n", __func__, __LINE__, nLastErr);
 	}
-
-	{
-		std::lock_guard<std::mutex> lock(_mtx);
-		_isReady = false;
-	}
-	_cond.notify_one();
+	s_syncChannel->stbOn();
 
 	printf("[%s]:%d ret=%d\n", __func__, __LINE__, ret);
 
 	while (true) {
 		printf("[%s] send start\n", __func__);
-		{
-			std::unique_lock<std::mutex> uniq_lk(_mtx); // ここでロックされる
-			_cond.wait(uniq_lk, [] { return _isReady; });
-		}
+		s_syncChannel->waitAckOn();
 		printf("[%s]:%d wakeup recv\n", __func__, __LINE__);
 		// 5文字送信
 		send(sock, "SELLO", 5, 0);
-		{
-			std::lock_guard<std::mutex> lock(_mtx);
-			_isReady = false;
-		}
-		_cond.notify_one();
+		s_syncChannel->stbOn();
 		printf("[%s]:%d wakeup send\n", __func__, __LINE__);
 		printf("[%s] end\n", __func__);
 	}
@@ -138,12 +105,17 @@ int main()
 
 	WSAStartup(MAKEWORD(2, 0), &wsaData);
 
+	s_syncChannel = new SyncChannel();
+
+
 	std::thread th(recvThread);
 	std::thread th2(sendThread);
 	th.join();
 	th2.join();
 
 	WSACleanup();
+	s_syncChannel = nullptr;
+
     return 0;
 }
 
