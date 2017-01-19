@@ -2,6 +2,8 @@
 #include "common_private.h"
 #include "ClientChannel.h"
 
+#include <fstream>
+
 namespace Communication {
 
 	ClientChannel::ClientChannel(int sendPortNum, int recvPortNum, const std::string ip) {
@@ -47,9 +49,14 @@ namespace Communication {
 			std::unique_lock<std::mutex> uniq_lk(recvMutex_);
 			recvCond_.wait(uniq_lk, [this] { return 1 == recvCond_val; });
 
-			printf("%s:%d %s, %d\n", __func__, __LINE__, recvBuf, recvBufSize);
+			std::ofstream  fout;
+			fout.open("./recv.jpg", std::ios::out | std::ios::binary | std::ios::trunc);
+			fout.write(reinterpret_cast<char *>(recvBuf), recvBufSize);
+
+			//printf("%s:%d %s, %d\n", __func__, __LINE__, recvBuf, recvBufSize);
 			free(recvBuf);
 			recvBuf = nullptr;
+
 		}
 
 		return 0;
@@ -90,11 +97,11 @@ namespace Communication {
 		cond_.notify_one();
 
 		while (true) {
-			char buf[32];
+			char buf[17126];
 
 			// クライアントからデータを受信
 			memset(buf, 0, sizeof(buf));
-			int n = recv(this->recvSoc, buf, 5, 0);
+			int n = recv(this->recvSoc, buf, 17126, 0);
 			if (n <= 0)
 				break;
 

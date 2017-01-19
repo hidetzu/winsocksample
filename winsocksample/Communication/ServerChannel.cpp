@@ -4,6 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+//DEBUG用
+#include <fstream>
+
 namespace Communication {
 	ServerChannel::ServerChannel(int recvPortNum, int sendPortNum, const std::string ip) {
 		this->recvPortNum = recvPortNum;
@@ -61,7 +64,7 @@ namespace Communication {
 			char buf[32];
 
 			// クライアントからデータを受信
-			memset(buf, 0, sizeof(buf));
+			memset(buf, 0, 32);
 			printf("[%s] %d, recv >>>> \n", __func__, __LINE__);
 			int n = recv(this->recvSoc, buf, 5, 0);
 			printf("[%s] %d, recv <<< \n", __func__, __LINE__);
@@ -70,15 +73,26 @@ namespace Communication {
 
 			{
 				std::lock_guard<std::mutex> lock(sendMutex_);
+#if false
 				sendBufSize = n;
-				sendBuf = (char*)malloc(sizeof(char) * n);
-				memset(sendBuf, '0x00', sizeof(char) * n);
-				memcpy(sendBuf, buf, sizeof(char) * n);
+				sendBuf = (char*)malloc(sizeof(char) * n + 1);
+				memset(sendBuf, '\0', sizeof(char) * n + 1);
+				memcpy(sendBuf, buf, sizeof(char) * n + 1);
+#endif
+
+				std::ifstream fin("./dambo3.jpg", std::ios::in | std::ios::binary);
+				size_t fileSize = (size_t)fin.seekg(0, std::ios::end).tellg();
+				fin.seekg(0, std::ios::beg);
+				this->sendBuf = new char[fileSize];
+				fin.read(this->sendBuf, fileSize);
+				sendBufSize = fileSize;
 				sendCond_val = 1;
+#if false
+				printf("!1![%s] %d, %s\n", __func__, n, buf);
+				printf("!2![%s] %d, %s\n", __func__, sendBufSize, sendBuf);
+#endif
 			}
 			sendCond_.notify_one();
-
-			printf("[%s] %d, %s %d\n", __func__, n, buf, sizeof(sendBuf));
 		}
 	}
 
@@ -130,15 +144,15 @@ namespace Communication {
 				bufsize = sendBufSize;
 
 				if(sendBuf != nullptr)
-					free(sendBuf);
+					delete[] sendBuf;
 				sendBuf = nullptr;
 				sendBufSize = 0;
 				sendCond_val = 0;
 			}
-			printf("[%s] %d, send %s >>>> \n", __func__, __LINE__, pBuf);
-			// 5文字送信
+			//printf("[%s] %d, send %s >>>> \n", __func__, __LINE__, pBuf);
+			
 			int n = send(this->sendSoc, pBuf, bufsize, 0);
-			printf("[%s] %d, %s\n", __func__, __LINE__, pBuf);
+			//printf("[%s] %d, %s\n", __func__, __LINE__, pBuf);
 		}
 	}
 }
