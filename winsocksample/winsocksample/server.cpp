@@ -5,14 +5,17 @@
 
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 
+#if false
 #include <winsock2.h>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
 #include "syncChannel.h"
+#endif
 
-#pragma comment(lib,"Ws2_32.lib")
+#include "communication.h"
 
+#if false
 static SyncChannel* s_syncChannel = nullptr;
 
 void recvThread() {
@@ -101,21 +104,30 @@ void sendThread() {
 
 int main()
 {
-	WSADATA wsaData;
-
-	WSAStartup(MAKEWORD(2, 0), &wsaData);
+	communication_init();
 
 	s_syncChannel = new SyncChannel();
-
 
 	std::thread th(recvThread);
 	std::thread th2(sendThread);
 	th.join();
 	th2.join();
 
-	WSACleanup();
+	communication_finalize();
 	s_syncChannel = nullptr;
 
     return 0;
 }
+#endif
 
+int main() {
+	communication_init();
+
+	void* pContext = communication_serverInit();
+	communication_serverFinalize(pContext);
+
+	communication_finalize();
+
+	getwchar();
+	return 0;
+}
