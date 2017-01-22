@@ -40,10 +40,12 @@ struct ConfigParam {
 	char* ip;
 };
 
+DLL_API typedef ResponseParam* (__stdcall *t_createResponseParam)(RequestParam* pRequestParam);
+
 DLL_API int __stdcall communication_init(void);
 DLL_API int __stdcall communication_finalize(void);
 
-DLL_API void* __stdcall communication_serverInit(ConfigParam* pParam);
+DLL_API void* __stdcall communication_serverInit(ConfigParam* pParam, t_createResponseParam createResParam);
 DLL_API int __stdcall communication_serverFinalize(void* pContext);
 
 DLL_API void* __stdcall communication_clientInit(ConfigParam* pParam);

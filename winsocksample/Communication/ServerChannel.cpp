@@ -6,11 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-//DEBUG—p
-#include <fstream>
-
 namespace Communication {
-	ServerChannel::ServerChannel(int recvPortNum, int sendPortNum, std::string ip) {
+	ServerChannel::ServerChannel(int recvPortNum, int sendPortNum, const std::string ip, t_createResponseParam createResParam) {
+
+		this->createResParam_ = createResParam;
 		this->recvPortNum = recvPortNum;
 		this->sendPortNum = sendPortNum;
 		this->ip = ip;
@@ -30,6 +29,21 @@ namespace Communication {
 			delete this->resQueue;
 		}
 	}
+
+	void ServerChannel::responseHandler(RequestParam* pRequestParam) {
+		auto callback = this->createResParam_;
+		ResponseParam* pResponseData = nullptr;
+
+		if (callback != nullptr) {
+			pResponseData = this->createResParam_(pRequestParam);
+		}
+
+		delete[] pRequestParam->data;
+		delete[] pRequestParam;
+
+		resQueue->enqueue(pResponseData);
+	}
+
 
 	void ServerChannel::recvThreadProc() {
 
@@ -51,35 +65,24 @@ namespace Communication {
 		while (true) {
 
 			DEBUG_PRINT("recv >>>");
-			RequestParam requestParam;
-			memset(&requestParam, 0x00, sizeof(RequestParam));
+			RequestParam* pRequestParam = new RequestParam;
+			memset(pRequestParam, 0x00, sizeof(RequestParam));
 
-			int n = recv(this->recvSoc, (char*)&requestParam, sizeof(int32_t) + sizeof(int32_t), 0);
+			int n = recv(this->recvSoc, (char*)pRequestParam, sizeof(int32_t) + sizeof(int32_t), 0);
 			DEBUG_PRINT("recv <<<");
-			DEBUG_PRINT("cmdType[%d] ", requestParam.cmdType);
-			DEBUG_PRINT("dataSize[%d] ", requestParam.dataSize);
+			DEBUG_PRINT("cmdType[%d] ", pRequestParam->cmdType);
+			DEBUG_PRINT("dataSize[%d] ", pRequestParam->dataSize);
 
-			requestParam.data = new char[requestParam.dataSize];
-			memset(requestParam.data, 0x00, requestParam.dataSize);
+			pRequestParam->data = new char[pRequestParam->dataSize];
+			memset(pRequestParam->data, 0x00, pRequestParam->dataSize);
 
-			n = recv(this->recvSoc, requestParam.data, requestParam.dataSize, 0);
+			n = recv(this->recvSoc, pRequestParam->data, pRequestParam->dataSize, 0);
 			DEBUG_PRINT("recv recvSize[%d]", n);
 			if (n <= 0)
 				break;
 
-			delete[] requestParam.data;
-			std::ifstream fin("./dambo3.jpg", std::ios::in | std::ios::binary);
-			size_t fileSize = (size_t)fin.seekg(0, std::ios::end).tellg();
-			fin.seekg(0, std::ios::beg);
-
-			ResponseParam* pResponseData = new ResponseParam;
-			pResponseData->cmdType = 0;
-			pResponseData->result = 0;
-			pResponseData->resData.buf = new char[fileSize];
-			pResponseData->resData.bufsize = (int32_t)fileSize;
-			fin.read(pResponseData->resData.buf, fileSize);
-
-			resQueue->enqueue(pResponseData);
+			std::thread a = std::thread([&] { responseHandler(pRequestParam); });
+			a.detach();
 		}
 	}
 

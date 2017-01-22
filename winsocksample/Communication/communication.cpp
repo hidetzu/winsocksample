@@ -1,8 +1,6 @@
 
 #include <WinSock2.h>
 
-#include <fstream>
-
 #include "communication.h"
 #include "ServerChannel.h"
 #include "ClientChannel.h"
@@ -21,9 +19,9 @@ int __stdcall communication_finalize(void)
 	return 0;
 }
 
-void* __stdcall communication_serverInit(ConfigParam* pParam)
+void* __stdcall communication_serverInit(ConfigParam* pParam, t_createResponseParam createResParam)
 {
-	return new Communication::ServerChannel(pParam->recvPortNum, pParam->sendPortNum, pParam->ip);
+	return new Communication::ServerChannel(pParam->recvPortNum, pParam->sendPortNum, pParam->ip, createResParam);
 }
 
 int __stdcall communication_serverFinalize(void* pContext)

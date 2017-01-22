@@ -4,8 +4,6 @@
 #include "ClientChannel.h"
 #include "util.h"
 
-#include <fstream>
-
 namespace Communication {
 
 	ClientChannel::ClientChannel(int sendPortNum, int recvPortNum, char* ip) {

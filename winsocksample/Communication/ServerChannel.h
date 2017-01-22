@@ -10,9 +10,10 @@
 namespace Communication {
 	class ServerChannel {
 	public:
-		ServerChannel(int recvPortNum, int sendPortNum, const std::string ip);
+		ServerChannel(int recvPortNum, int sendPortNum, const std::string ip, t_createResponseParam createResParam);
 		~ServerChannel();
 	private:
+		t_createResponseParam createResParam_;
 		int recvPortNum;
 		int sendPortNum;
 		std::string ip;
@@ -31,5 +32,7 @@ namespace Communication {
 
 		void recvThreadProc();
 		void sendThreadProc();
+
+		void responseHandler(RequestParam* pRequestParam);
 	};
 }
