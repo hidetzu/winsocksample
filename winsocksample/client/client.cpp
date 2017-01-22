@@ -32,9 +32,7 @@ void sendThread() {
 		memcpy(reqParam.data, "HELLO", 5);
 
 
-		communication_clientSend(pContext, &reqParam, &pResParam);
-		char a = pResParam->resData.buf[pResParam->resData.bufsize - 1];
-
+		communication_clientSendRecv(pContext, &reqParam, &pResParam);
 
 		std::time_t now = std::time(NULL);
 		std::tm tm;

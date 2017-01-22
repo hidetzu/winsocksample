@@ -50,4 +50,4 @@ DLL_API int __stdcall communication_serverFinalize(void* pContext);
 
 DLL_API void* __stdcall communication_clientInit(ConfigParam* pParam);
 DLL_API int __stdcall communication_clientFinalize(void* pContext);
-DLL_API int __stdcall communication_clientSend(void* pContext, RequestParam* pReqParam, ResponseParam** ppResParam);
+DLL_API int __stdcall communication_clientSendRecv(void* pContext, RequestParam* pReqParam, ResponseParam** ppResParam);

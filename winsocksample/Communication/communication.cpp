@@ -37,7 +37,7 @@ void* __stdcall communication_clientInit(ConfigParam* pParam)
 	return new Communication::ClientChannel(pParam->sendPortNum, pParam->recvPortNum, pParam->ip);
 }
 
-int __stdcall communication_clientSend(void* pContext, RequestParam* pReqParam, ResponseParam** ppResParam) {
+int __stdcall communication_clientSendRecv(void* pContext, RequestParam* pReqParam, ResponseParam** ppResParam) {
 	Communication::ClientChannel* inst =
 		(Communication::ClientChannel*)pContext;
 

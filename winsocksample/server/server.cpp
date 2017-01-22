@@ -5,18 +5,21 @@
 #include <stdlib.h>
 #include <crtdbg.h> 
 
-#include <stdio.h>
+#include <iostream>
+#include <fstream>
 #include "communication.h"
 
-#include <fstream>
-
 static ResponseParam* __stdcall createReponse(RequestParam* pReqParam) {
+	std::cout << "cmdType[" << pReqParam->cmdType << "]"<< std::endl;
+	std::cout << "dataSize[" << pReqParam->dataSize << "]"<< std::endl;
+
+	ResponseParam* pResponseData = new ResponseParam;
+	pResponseData->cmdType = pReqParam->cmdType;
+
 	std::ifstream fin("./dambo3.jpg", std::ios::in | std::ios::binary);
 	size_t fileSize = (size_t)fin.seekg(0, std::ios::end).tellg();
 	fin.seekg(0, std::ios::beg);
 
-	ResponseParam* pResponseData = new ResponseParam;
-	pResponseData->cmdType = 0;
 	pResponseData->result = 0;
 	pResponseData->resData.buf = new char[fileSize];
 	pResponseData->resData.bufsize = (int32_t)fileSize;
