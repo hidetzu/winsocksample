@@ -19,6 +19,8 @@ namespace Communication {
 		this->sendSoc = 
 			createSendSocket(this->sendPortNum,this->ip);
 
+		this->resQueue = new SafeQueue< std::vector<ResponseParam*> >();
+
 		// óM‘¤‚ª’ÊM‚Å‚«‚é‚æ‚¤‚É‚È‚é‚Ü‚Å‘Ò‚Â
 		{
 			std::unique_lock<std::mutex> uniq_lk(mutex_);
@@ -29,6 +31,8 @@ namespace Communication {
 	}
 
 	ClientChannel::~ClientChannel() {
+		if (this->resQueue != nullptr)
+			delete this->resQueue;
 	}
 
 	int ClientChannel::Send(RequestParam* pRequestParam) {
@@ -101,14 +105,8 @@ namespace Communication {
 
 					pResData->buf = new char[pResData->bufsize];
 
-					int length = 0;
-					while(length < pResData->bufsize) {
-						DEBUG_PRINT("recive start >>>>");
-						int recvSize = pResData->bufsize - length;
-						n = recv(this->recvSoc, &pResponseData->resData.buf[length], recvSize, 0);
-						length += n;
-						DEBUG_PRINT("recive : size[%d]", n);
-					}
+					recv_allData(this->recvSoc,
+						pResponseData->resData.buf, pResData->bufsize);
 
 					this->response.push_back(pResponseData);
 

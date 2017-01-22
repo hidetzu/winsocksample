@@ -14,7 +14,6 @@ namespace Communication {
 		this->recvPortNum = recvPortNum;
 		this->sendPortNum = sendPortNum;
 		this->ip = ip;
-		this->sendCond_val = 0;
 		this->cond_val = -1;
 
 		this->resQueue = new SafeQueue< std::vector<ResponseParam*> >();
@@ -65,6 +64,24 @@ namespace Communication {
 			if (n <= 0)
 				break;
 
+			std::vector<ResponseParam*> response;
+			std::ifstream fin("./dambo3.jpg", std::ios::in | std::ios::binary);
+			size_t fileSize = (size_t)fin.seekg(0, std::ios::end).tellg();
+			fin.seekg(0, std::ios::beg);
+
+			ResponseParam* pResponseData = new ResponseParam;
+			pResponseData->cmdType = 0;
+			pResponseData->result = 0;
+			pResponseData->resData.continueFlg = 0;
+			pResponseData->resData.buf = new char[fileSize];
+			pResponseData->resData.bufsize = (int32_t)fileSize;
+			fin.read(pResponseData->resData.buf, fileSize);
+
+			response.push_back(pResponseData);
+
+			resQueue->enqueue(response);
+
+#if false
 			{
 				std::lock_guard<std::mutex> lock(sendMutex_);
 
@@ -85,8 +102,7 @@ namespace Communication {
 				sendCond_val = 1;
 			}
 			sendCond_.notify_one();
-
-
+#endif
 
 		}
 	}
@@ -117,17 +133,15 @@ namespace Communication {
 
 		while (true) {
 			DEBUG_PRINT("Send Loop Start >>>");
-			char* pBuf = nullptr;
-			int bufsize = 0;
-			// 送信側が通信できるようになるまで待つ
-			{
-				std::unique_lock<std::mutex> uniq_lk(sendMutex_);
-				sendCond_.wait(uniq_lk, [this] { return 1 == sendCond_val; });
 
+			// 送信データの準備ができるまで待つ。
+			std::vector<ResponseParam*> response =
+				this->resQueue->dequeue();
+			{
 				DEBUG_PRINT("recv sendResponse");
 				// 空になるまで送信する
-				std::vector<ResponseParam*>::iterator it = this->response.begin();
-				while (it != this->response.end()) {
+				std::vector<ResponseParam*>::iterator it = response.begin();
+				while (it != response.end()) {
 					auto pResParam = *it;
 					pResParam->cmdType = (int32_t)CommandType::Pram1;
 					int n = send(this->sendSoc, (char*)(pResParam), sizeof(CommandType) + 4 + 4 + 4, 0);
@@ -141,10 +155,8 @@ namespace Communication {
 
 					delete pResParam->resData.buf;
 					delete pResParam;
-					it = this->response.erase(it);
+					it = response.erase(it);
 				}
-
-				sendCond_val = 0;
 			}
 			DEBUG_PRINT("Send Loop End <<< ");
 		}

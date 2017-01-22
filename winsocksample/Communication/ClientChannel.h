@@ -6,6 +6,7 @@
 #include <condition_variable>
 
 #include "common_private.h"
+#include "SafeQueue.h"
 
 namespace Communication {
 	class ClientChannel{
@@ -33,6 +34,8 @@ namespace Communication {
 		std::condition_variable recvCond_;
 		std::vector<ResponseParam*> response;
 		int recvCond_val;
+
+		SafeQueue< std::vector<ResponseParam*> >* resQueue;
 
 		std::thread recvThread;
 

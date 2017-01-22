@@ -54,4 +54,17 @@ namespace Communication {
 		DEBUG_PRINT("End accept[%d]", (int)acSock);
 		return acSock;
 	}
+
+	int recv_allData(SOCKET soc, char* pBuf, int32_t bufSize) {
+		int length = 0;
+		while(length < bufSize) {
+			DEBUG_PRINT("recive start >>>>");
+			int recvSize = bufSize - length;
+			int n = recv(soc, &pBuf[length], recvSize, 0);
+			length += n;
+			DEBUG_PRINT("recive : size[%d]", n);
+		}
+
+		return 0;
+	}
 };

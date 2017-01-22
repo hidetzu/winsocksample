@@ -27,11 +27,6 @@ namespace Communication {
 		std::condition_variable cond_;
 		int cond_val;
 
-		std::mutex sendMutex_;
-		std::condition_variable sendCond_;
-		std::vector<ResponseParam*> response;
-		int sendCond_val;
-
 		SafeQueue< std::vector<ResponseParam*> >* resQueue;
 
 		void recvThreadProc();

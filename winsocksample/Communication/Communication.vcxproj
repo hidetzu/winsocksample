@@ -149,7 +149,6 @@
     <ClCompile Include="ClientChannel.cpp" />
     <ClCompile Include="communication.cpp" />
     <ClCompile Include="dllMaincpp.cpp" />
-    <ClCompile Include="SafeQueue.cpp" />
     <ClCompile Include="ServerChannel.cpp" />
     <ClCompile Include="util.cpp" />
   </ItemGroup>
