@@ -2,9 +2,10 @@
 
 
 #include <vector> 
+
 #include "communication.h"
 #include "common_private.h"
-
+#include "SafeQueue.h"
 
 namespace Communication {
 	class ServerChannel {
@@ -29,9 +30,9 @@ namespace Communication {
 		std::mutex sendMutex_;
 		std::condition_variable sendCond_;
 		std::vector<ResponseParam*> response;
-
 		int sendCond_val;
 
+		SafeQueue< std::vector<ResponseParam*> >* resQueue;
 
 		void recvThreadProc();
 		void sendThreadProc();

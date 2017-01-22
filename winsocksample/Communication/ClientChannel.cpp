@@ -88,12 +88,11 @@ namespace Communication {
 
 					DEBUG_PRINT("recive start >>>>");
 
-					int a = 0;
+
+					int n = recv(this->recvSoc, (char*)(pResponseData),
+						sizeof(int32_t) + sizeof(int32_t) + sizeof(int32_t) + sizeof(int32_t), 0);
 
 					ResponseData* pResData = &pResponseData->resData;
-
-					int n = recv(this->recvSoc, (char*)(pResponseData), sizeof(int32_t) + sizeof(int32_t), 0);
-					n = recv(this->recvSoc, (char*)(pResData), sizeof(int32_t) + sizeof(int32_t), 0);
 
 					DEBUG_PRINT("recive : size[%d] commandType[%d] continueFlg[%d] bufsize[%d]", n,
 						(pResponseData->cmdType),
@@ -102,9 +101,14 @@ namespace Communication {
 
 					pResData->buf = new char[pResData->bufsize];
 
-					DEBUG_PRINT("recive start >>>>");
-					n = recv(this->recvSoc, pResponseData->resData.buf, pResponseData->resData.bufsize, 0);
-					DEBUG_PRINT("recive : size[%d]", n);
+					int length = 0;
+					while(length < pResData->bufsize) {
+						DEBUG_PRINT("recive start >>>>");
+						int recvSize = pResData->bufsize - length;
+						n = recv(this->recvSoc, &pResponseData->resData.buf[length], recvSize, 0);
+						length += n;
+						DEBUG_PRINT("recive : size[%d]", n);
+					}
 
 					this->response.push_back(pResponseData);
 

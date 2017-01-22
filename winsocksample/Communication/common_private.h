@@ -12,7 +12,7 @@
 
 #define DEBUG_PRINT(fmt, ...)                                                            \
 				do {                                                                     \
-					fprintf(stdout, "[%s];%d: " fmt, __func__, __LINE__, ##__VA_ARGS__); \
+					fprintf(stdout, "[%s]:%d: " fmt, __func__, __LINE__, ##__VA_ARGS__); \
 					fprintf(stdout, "\n");                                               \
 				} while (0);
 #else

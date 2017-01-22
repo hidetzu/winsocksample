@@ -17,7 +17,7 @@ namespace Communication {
 
 		// ÉTÅ[ÉoÇ…ê⁄ë±
 		int ret = connect(soc, (struct sockaddr *)&server, sizeof(server));
-		DEBUG_PRINT("[%s];%d: ret[%d]", __func__, __LINE__, ret);
+		DEBUG_PRINT("ret[%d]",ret);
 
 		return soc;
 	}
@@ -51,7 +51,7 @@ namespace Communication {
 		len = sizeof(client);
 
 		acSock = accept(sock, (struct sockaddr *)&client, &len);
-		DEBUG_PRINT("END accept[%d]", (int)acSock);
+		DEBUG_PRINT("End accept[%d]", (int)acSock);
 		return acSock;
 	}
 };

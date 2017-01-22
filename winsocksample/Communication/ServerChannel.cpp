@@ -17,6 +17,7 @@ namespace Communication {
 		this->sendCond_val = 0;
 		this->cond_val = -1;
 
+		this->resQueue = new SafeQueue< std::vector<ResponseParam*> >();
 
 		recvThread = std::thread([this] { recvThreadProc(); });
 		sendThread = std::thread([this] { sendThreadProc(); });
@@ -25,6 +26,10 @@ namespace Communication {
 	ServerChannel::~ServerChannel() {
 		if (recvThread.joinable())
 			recvThread.join();
+
+		if (this->resQueue != nullptr) {
+			delete this->resQueue;
+		}
 	}
 
 	void ServerChannel::recvThreadProc() {
@@ -45,10 +50,6 @@ namespace Communication {
 		}
 
 		while (true) {
-			char buf[32];
-
-			// クライアントからデータを受信
-			memset(buf, 0, 32);
 
 			DEBUG_PRINT("recv >>>");
 			RequestParam requestParam;
@@ -84,13 +85,15 @@ namespace Communication {
 				sendCond_val = 1;
 			}
 			sendCond_.notify_one();
+
+
+
 		}
 	}
 
 	void ServerChannel::sendThreadProc() {
-		struct sockaddr_in server;
-		//char buf[32];
 
+		DEBUG_PRINT("pripare recv Connection  ...");
 		// 受信側が通信できるようになるまで待つ
 		{
 			std::unique_lock<std::mutex> uniq_lk(mutex_);
@@ -98,7 +101,7 @@ namespace Communication {
 		}
 		std::this_thread::sleep_for(std::chrono::seconds(2));
 
-		printf("[%s];%d: sendThreadProc start %d\n", __func__, __LINE__, sendPortNum);
+		DEBUG_PRINT("Start");
 
 		this->sendSoc =
 			createSendSocket(this->sendPortNum, this->ip);
@@ -110,9 +113,10 @@ namespace Communication {
 		}
 		cond_.notify_one();
 
-		printf("END \n");
+		DEBUG_PRINT("End");
+
 		while (true) {
-			DEBUG_PRINT("[%s] %d, loop start >>>> \n", __func__, __LINE__);
+			DEBUG_PRINT("Send Loop Start >>>");
 			char* pBuf = nullptr;
 			int bufsize = 0;
 			// 送信側が通信できるようになるまで待つ
@@ -120,7 +124,7 @@ namespace Communication {
 				std::unique_lock<std::mutex> uniq_lk(sendMutex_);
 				sendCond_.wait(uniq_lk, [this] { return 1 == sendCond_val; });
 
-				DEBUG_PRINT("[%s] %d, wait <<< \n", __func__, __LINE__);
+				DEBUG_PRINT("recv sendResponse");
 				// 空になるまで送信する
 				std::vector<ResponseParam*>::iterator it = this->response.begin();
 				while (it != this->response.end()) {
@@ -142,10 +146,7 @@ namespace Communication {
 
 				sendCond_val = 0;
 			}
-
-			//printf("[%s] %d, send %s >>>> \n", __func__, __LINE__, pBuf);
-			
-			//printf("[%s] %d, %s\n", __func__, __LINE__, pBuf);
+			DEBUG_PRINT("Send Loop End <<< ");
 		}
 	}
 }
