@@ -31,4 +31,3 @@ int main()
 	communication_finalize();
     return 0;
 }
-

@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "server", "winsocksample\winsocksample.vcxproj", "{3685A6BB-0430-4B87-A577-3F87C6273ACA}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "server", "server\winsocksample.vcxproj", "{3685A6BB-0430-4B87-A577-3F87C6273ACA}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "client", "client\client.vcxproj", "{F6D828E1-CE19-4C35-945F-16EE57B3AD07}"
 EndProject

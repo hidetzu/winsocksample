@@ -5,13 +5,15 @@
 #include <mutex>
 #include <condition_variable>
 
+#include "common_private.h"
+
 namespace Communication {
 	class ClientChannel{
 
 	public:
 		ClientChannel(int sendPortNum, int recvPortNum, const std::string ip);
 
-		int Send(char* pData, int dataSize);
+		int Send(RequestParam* pRequestParam);
 
 		~ClientChannel();
 	private:
@@ -29,8 +31,7 @@ namespace Communication {
 
 		std::mutex recvMutex_;
 		std::condition_variable recvCond_;
-		char* recvBuf;
-		int recvBufSize;
+		std::vector<ResponseParam*> response;
 		int recvCond_val;
 
 		std::thread recvThread;

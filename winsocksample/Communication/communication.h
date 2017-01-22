@@ -6,7 +6,35 @@
 #define DLL_API __declspec(dllimport)
 #endif
 
+#include <cstdint>
+
 #pragma comment(lib,"Ws2_32.lib")
+
+
+enum CommandType {
+	Pram1,
+};
+
+#define REQUESTDATA_MAX (1 * 1024 * 1000)
+
+struct RequestParam {
+	int32_t cmdType;
+	int32_t dataSize;
+	char    data[5];
+};
+
+struct ResponseData {
+	int32_t   continueFlg;
+	int32_t   bufsize;
+	char*     buf;
+};
+
+struct ResponseParam {
+	int32_t   cmdType;
+	int32_t   result;
+	ResponseData   resData;
+};
+
 
 DLL_API int __stdcall communication_init(void);
 DLL_API int __stdcall communication_finalize(void);

@@ -40,8 +40,13 @@ void* __stdcall communication_clientInit(void)
 int __stdcall communication_clientSend(void* pContext, char* pData, int dataSize) {
 	Communication::ClientChannel* inst =
 		(Communication::ClientChannel*)pContext;
+	RequestParam reqParam;
 
-	return inst->Send(pData, dataSize);
+	reqParam.cmdType  = (int32_t)CommandType::Pram1;
+	reqParam.dataSize = dataSize + sizeof(int32_t) + sizeof(int32_t);
+	memcpy(reqParam.data, pData, dataSize);
+
+	return inst->Send(&reqParam);
 }
 
 int __stdcall communication_clientFinalize(void* pContext)

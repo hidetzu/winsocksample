@@ -1,9 +1,10 @@
 #pragma once
 
-#include <WinSock2.h>
-#include <thread>
-#include <mutex>
-#include <condition_variable>
+
+#include <vector> 
+#include "communication.h"
+#include "common_private.h"
+
 
 namespace Communication {
 	class ServerChannel {
@@ -27,9 +28,10 @@ namespace Communication {
 
 		std::mutex sendMutex_;
 		std::condition_variable sendCond_;
-		char* sendBuf;
-		int sendBufSize;
+		std::vector<ResponseParam*> response;
+
 		int sendCond_val;
+
 
 		void recvThreadProc();
 		void sendThreadProc();

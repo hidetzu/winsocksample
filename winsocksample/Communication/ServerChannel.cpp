@@ -1,6 +1,8 @@
 
+#include "communication.h"
 #include "common_private.h"
 #include "ServerChannel.h"
+#include "util.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -14,6 +16,8 @@ namespace Communication {
 		this->ip = ip;
 		this->sendCond_val = 0;
 		this->cond_val = -1;
+
+
 		recvThread = std::thread([this] { recvThreadProc(); });
 		sendThread = std::thread([this] { sendThreadProc(); });
 	}
@@ -24,28 +28,8 @@ namespace Communication {
 	}
 
 	void ServerChannel::recvThreadProc() {
-		SOCKET sock;
 
-		struct sockaddr_in addr;
-		struct sockaddr_in client;
-		int len;
-
-		// ソケットの作成
-		sock = socket(AF_INET, SOCK_STREAM, 0);
-
-		// 接続先指定用構造体の準備
-		addr.sin_family = AF_INET;
-		addr.sin_port = htons(this->recvPortNum);
-		addr.sin_addr.S_un.S_addr = INADDR_ANY;
-
-		bind(sock, (struct sockaddr *)&addr, sizeof(addr));
-
-		// TCPクライアントからの接続要求を待てる状態にする
-		listen(sock, 5);
-
-		// TCPクライアントからの接続要求を受け付ける
-		len = sizeof(client);
-		this->recvSoc = accept(sock, (struct sockaddr *)&client, &len);
+		this->recvSoc = createAcceptSocket(this->recvPortNum);
 
 		// 受信側の準備が完了したことを通知する
 		{
@@ -65,32 +49,39 @@ namespace Communication {
 
 			// クライアントからデータを受信
 			memset(buf, 0, 32);
-			printf("[%s] %d, recv >>>> \n", __func__, __LINE__);
-			int n = recv(this->recvSoc, buf, 5, 0);
-			printf("[%s] %d, recv <<< \n", __func__, __LINE__);
+
+			DEBUG_PRINT("recv >>>");
+			RequestParam requestParam;
+			memset(&requestParam, 0x00, sizeof(RequestParam));
+
+			int n = recv(this->recvSoc, (char*)&requestParam, sizeof(int32_t) + sizeof(int32_t), 0);
+			DEBUG_PRINT("recv <<<");
+			DEBUG_PRINT("cmdType[%d] ", requestParam.cmdType);
+			DEBUG_PRINT("dataSize[%d] ", requestParam.dataSize);
+
+			n = recv(this->recvSoc, requestParam.data, requestParam.dataSize - sizeof(int32_t) - sizeof(int32_t), 0);
+			DEBUG_PRINT("recv recvSize[%d]", n);
 			if (n <= 0)
 				break;
 
 			{
 				std::lock_guard<std::mutex> lock(sendMutex_);
-#if false
-				sendBufSize = n;
-				sendBuf = (char*)malloc(sizeof(char) * n + 1);
-				memset(sendBuf, '\0', sizeof(char) * n + 1);
-				memcpy(sendBuf, buf, sizeof(char) * n + 1);
-#endif
 
 				std::ifstream fin("./dambo3.jpg", std::ios::in | std::ios::binary);
 				size_t fileSize = (size_t)fin.seekg(0, std::ios::end).tellg();
 				fin.seekg(0, std::ios::beg);
-				this->sendBuf = new char[fileSize];
-				fin.read(this->sendBuf, fileSize);
-				sendBufSize = fileSize;
+
+				ResponseParam* pResponseData = new ResponseParam;
+				pResponseData->cmdType = 0;
+				pResponseData->result = 0;
+				pResponseData->resData.continueFlg = 0;
+				pResponseData->resData.buf = new char[fileSize];
+				pResponseData->resData.bufsize = (int32_t)fileSize;
+				fin.read(pResponseData->resData.buf, fileSize);
+
+				this->response.push_back(pResponseData);
+
 				sendCond_val = 1;
-#if false
-				printf("!1![%s] %d, %s\n", __func__, n, buf);
-				printf("!2![%s] %d, %s\n", __func__, sendBufSize, sendBuf);
-#endif
 			}
 			sendCond_.notify_one();
 		}
@@ -106,19 +97,11 @@ namespace Communication {
 			cond_.wait(uniq_lk, [this] { return 0 == cond_val; });
 		}
 		std::this_thread::sleep_for(std::chrono::seconds(2));
+
 		printf("[%s];%d: sendThreadProc start %d\n", __func__, __LINE__, sendPortNum);
 
-		// ソケットの作成
-		this->sendSoc = socket(AF_INET, SOCK_STREAM, 0);
-
-		// 接続先指定用構造体の準備
-		server.sin_family = AF_INET;
-		server.sin_port = htons(this->sendPortNum);
-		inet_pton(AF_INET, (PCSTR)this->ip.c_str(), &server.sin_addr);
-
-		// サーバに接続
-		int ret = connect(this->sendSoc, (struct sockaddr *)&server, sizeof(server));
-		printf("[%s];%d: ret[%d]\n", __func__, __LINE__, ret);
+		this->sendSoc =
+			createSendSocket(this->sendPortNum, this->ip);
 
 		// 送信側の準備が完了したことを通知する
 		{
@@ -129,7 +112,7 @@ namespace Communication {
 
 		printf("END \n");
 		while (true) {
-			printf("[%s] %d, loop start >>>> \n", __func__, __LINE__);
+			DEBUG_PRINT("[%s] %d, loop start >>>> \n", __func__, __LINE__);
 			char* pBuf = nullptr;
 			int bufsize = 0;
 			// 送信側が通信できるようになるまで待つ
@@ -137,21 +120,31 @@ namespace Communication {
 				std::unique_lock<std::mutex> uniq_lk(sendMutex_);
 				sendCond_.wait(uniq_lk, [this] { return 1 == sendCond_val; });
 
-				printf("[%s] %d, send %s >>>> \n", __func__, __LINE__, this->sendBuf);
-				pBuf = (char*)malloc(sendBufSize);
-				memset(pBuf, '\0', sendBufSize);
-				memcpy(pBuf, sendBuf, sendBufSize);
-				bufsize = sendBufSize;
+				DEBUG_PRINT("[%s] %d, wait <<< \n", __func__, __LINE__);
+				// 空になるまで送信する
+				std::vector<ResponseParam*>::iterator it = this->response.begin();
+				while (it != this->response.end()) {
+					auto pResParam = *it;
+					pResParam->cmdType = (int32_t)CommandType::Pram1;
+					int n = send(this->sendSoc, (char*)(pResParam), sizeof(CommandType) + 4 + 4 + 4, 0);
+					DEBUG_PRINT("recive : size[%d] continueFlg[%d] bufsize[%d]", n,
+						pResParam->resData.continueFlg,
+						pResParam->resData.bufsize);
+					n = send(this->sendSoc, (char*)(pResParam->resData.buf), pResParam->resData.bufsize, 0);
+					DEBUG_PRINT("recive : size[%d] continueFlg[%d] bufsize[%d]", n,
+						pResParam->resData.continueFlg,
+						pResParam->resData.bufsize);
 
-				if(sendBuf != nullptr)
-					delete[] sendBuf;
-				sendBuf = nullptr;
-				sendBufSize = 0;
+					delete pResParam->resData.buf;
+					delete pResParam;
+					it = this->response.erase(it);
+				}
+
 				sendCond_val = 0;
 			}
+
 			//printf("[%s] %d, send %s >>>> \n", __func__, __LINE__, pBuf);
 			
-			int n = send(this->sendSoc, pBuf, bufsize, 0);
 			//printf("[%s] %d, %s\n", __func__, __LINE__, pBuf);
 		}
 	}
