@@ -7,7 +7,7 @@
 
 
 void sendThread() {
-	void* pContext = communication_clientInit();
+	void* pContext = communication_clientInit(15000, 15001, "127.0.0.1");
 
 	while(true) {
 		printf("[%s] start\n", __func__);

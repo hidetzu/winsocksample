@@ -16,7 +16,7 @@ namespace Communication {
 		this->ip = ip;
 		this->cond_val = -1;
 
-		this->resQueue = new SafeQueue< std::vector<ResponseParam*> >();
+		this->resQueue = new SafeQueue< ResponseParam* >();
 
 		recvThread = std::thread([this] { recvThreadProc(); });
 		sendThread = std::thread([this] { sendThreadProc(); });
@@ -64,7 +64,6 @@ namespace Communication {
 			if (n <= 0)
 				break;
 
-			std::vector<ResponseParam*> response;
 			std::ifstream fin("./dambo3.jpg", std::ios::in | std::ios::binary);
 			size_t fileSize = (size_t)fin.seekg(0, std::ios::end).tellg();
 			fin.seekg(0, std::ios::beg);
@@ -76,33 +75,7 @@ namespace Communication {
 			pResponseData->resData.bufsize = (int32_t)fileSize;
 			fin.read(pResponseData->resData.buf, fileSize);
 
-			response.push_back(pResponseData);
-
-			resQueue->enqueue(response);
-
-#if false
-			{
-				std::lock_guard<std::mutex> lock(sendMutex_);
-
-				std::ifstream fin("./dambo3.jpg", std::ios::in | std::ios::binary);
-				size_t fileSize = (size_t)fin.seekg(0, std::ios::end).tellg();
-				fin.seekg(0, std::ios::beg);
-
-				ResponseParam* pResponseData = new ResponseParam;
-				pResponseData->cmdType = 0;
-				pResponseData->result = 0;
-				pResponseData->resData.continueFlg = 0;
-				pResponseData->resData.buf = new char[fileSize];
-				pResponseData->resData.bufsize = (int32_t)fileSize;
-				fin.read(pResponseData->resData.buf, fileSize);
-
-				this->response.push_back(pResponseData);
-
-				sendCond_val = 1;
-			}
-			sendCond_.notify_one();
-#endif
-
+			resQueue->enqueue(pResponseData);
 		}
 	}
 
@@ -114,7 +87,6 @@ namespace Communication {
 			std::unique_lock<std::mutex> uniq_lk(mutex_);
 			cond_.wait(uniq_lk, [this] { return 0 == cond_val; });
 		}
-		std::this_thread::sleep_for(std::chrono::seconds(2));
 
 		DEBUG_PRINT("Start");
 
@@ -134,27 +106,20 @@ namespace Communication {
 			DEBUG_PRINT("Send Loop Start >>>");
 
 			// 送信データの準備ができるまで待つ。
-			std::vector<ResponseParam*> response =
-				this->resQueue->dequeue();
+			auto pResParam = this->resQueue->dequeue();
 			{
 				DEBUG_PRINT("recv sendResponse");
-				// 空になるまで送信する
-				std::vector<ResponseParam*>::iterator it = response.begin();
-				while (it != response.end()) {
-					auto pResParam = *it;
-					pResParam->cmdType = (int32_t)CommandType::Pram1;
-					int n = send(this->sendSoc, (char*)(pResParam), sizeof(CommandType) + 4 + 4, 0);
-					DEBUG_PRINT("recive : size[%d] result[%d] bufsize[%d]", n,
-						pResParam->result,
-						pResParam->resData.bufsize);
-					n = send(this->sendSoc, (char*)(pResParam->resData.buf), pResParam->resData.bufsize, 0);
-					DEBUG_PRINT("recive : size[%d]  bufsize[%d]", n,
-						pResParam->resData.bufsize);
 
-					delete pResParam->resData.buf;
-					delete pResParam;
-					it = response.erase(it);
-				}
+				int n = send(this->sendSoc, (char*)(pResParam), sizeof(CommandType) + 4 + 4, 0);
+				DEBUG_PRINT("recive : size[%d] result[%d] bufsize[%d]", n,
+					pResParam->result,
+					pResParam->resData.bufsize);
+				n = send(this->sendSoc, (char*)(pResParam->resData.buf), pResParam->resData.bufsize, 0);
+				DEBUG_PRINT("recive : size[%d]  bufsize[%d]", n,
+					pResParam->resData.bufsize);
+
+				delete pResParam->resData.buf;
+				delete pResParam;
 			}
 			DEBUG_PRINT("Send Loop End <<< ");
 		}

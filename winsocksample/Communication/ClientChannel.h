@@ -30,7 +30,7 @@ namespace Communication {
 		std::condition_variable cond_;
 		int cond_val;
 
-		SafeQueue< std::vector<ResponseParam*> >* resQueue;
+		SafeQueue< ResponseParam* >* resQueue;
 
 		std::thread recvThread;
 

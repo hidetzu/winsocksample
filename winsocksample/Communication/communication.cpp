@@ -19,9 +19,9 @@ int __stdcall communication_finalize(void)
 	return 0;
 }
 
-void* __stdcall communication_serverInit(void)
+void* __stdcall communication_serverInit(int recvPortNum, int sendPortNum, const char* ip)
 {
-	return new Communication::ServerChannel(15000, 15001, "127.0.0.1");
+	return new Communication::ServerChannel(recvPortNum, sendPortNum, ip);
 }
 
 int __stdcall communication_serverFinalize(void* pContext)
@@ -32,7 +32,7 @@ int __stdcall communication_serverFinalize(void* pContext)
 	return 0;
 }
 
-void* __stdcall communication_clientInit(void)
+void* __stdcall communication_clientInit(int sendPortNum, int recvPortNum, const char* ip)
 {
 	return new Communication::ClientChannel(15000, 15001, "127.0.0.1");
 }

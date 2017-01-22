@@ -27,7 +27,7 @@ namespace Communication {
 		std::condition_variable cond_;
 		int cond_val;
 
-		SafeQueue< std::vector<ResponseParam*> >* resQueue;
+		SafeQueue< ResponseParam* >* resQueue;
 
 		void recvThreadProc();
 		void sendThreadProc();

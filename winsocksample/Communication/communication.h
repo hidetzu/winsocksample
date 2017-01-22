@@ -38,9 +38,9 @@ struct ResponseParam {
 DLL_API int __stdcall communication_init(void);
 DLL_API int __stdcall communication_finalize(void);
 
-DLL_API void* __stdcall communication_serverInit(void);
+DLL_API void* __stdcall communication_serverInit(int recvPortNum, int sendPortNum, const char* ip);
 DLL_API int __stdcall communication_serverFinalize(void* pContext);
 
-DLL_API void* __stdcall communication_clientInit(void);
+DLL_API void* __stdcall communication_clientInit(int sendPortNum, int recvPortNum, const char* ip);
 DLL_API int __stdcall communication_clientFinalize(void* pContext);
 DLL_API int __stdcall communication_clientSend(void* pContext, char* pData, int dataSize);
