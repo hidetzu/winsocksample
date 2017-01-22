@@ -4,6 +4,7 @@
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
 #include <crtdbg.h> 
+
 #include <ctime>
 #include <time.h>
 
@@ -12,6 +13,7 @@
 #include "communication.h"
 
 #include <fstream>
+
 
 void sendThread() {
 	ConfigParam configParam;
@@ -31,7 +33,6 @@ void sendThread() {
 		reqParam.data = new char[5];
 		memcpy(reqParam.data, "HELLO", 5);
 
-
 		communication_clientSendRecv(pContext, &reqParam, &pResParam);
 
 		std::time_t now = std::time(NULL);
@@ -39,7 +40,8 @@ void sendThread() {
 		localtime_s(&tm, &now);
 
 		char buffer[32];
-		std::strftime(buffer, 32, "%d_%m_%Y_%H_%M_%S", &tm);
+		std::strftime(buffer, 32, "%Y%m%d%H%M%S", &tm);
+
 
 		// éÛêMì‡óeÇéÊÇËèoÇ∑
 		std::ofstream  fout;
@@ -47,15 +49,12 @@ void sendThread() {
 
 		auto pResData = pResParam;
 		fout.write(reinterpret_cast<char *>(pResData->resData.buf), pResData->resData.bufsize);
-		delete pResData->resData.buf;
-		delete pResData;
+		delete[] pResData->resData.buf;
+		delete   pResData;
 
 
 		printf("[%s] recive end <<<\n", __func__);
-
 		delete[] reqParam.data;
-		std::this_thread::sleep_for(std::chrono::seconds(1));
-
 	}
 
 	communication_clientFinalize(pContext);

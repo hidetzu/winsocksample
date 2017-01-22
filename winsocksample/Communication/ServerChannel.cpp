@@ -5,6 +5,7 @@
 #include "util.h"
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 namespace Communication {
 	ServerChannel::ServerChannel(int recvPortNum, int sendPortNum, const std::string ip, t_createResponseParam createResParam) {
@@ -31,6 +32,7 @@ namespace Communication {
 	}
 
 	void ServerChannel::responseHandler(RequestParam* pRequestParam) {
+		assert(pRequestParam->dataSize != 0);
 		auto callback = this->createResParam_;
 		ResponseParam* pResponseData = nullptr;
 
@@ -39,7 +41,7 @@ namespace Communication {
 		}
 
 		delete[] pRequestParam->data;
-		delete[] pRequestParam;
+		delete   pRequestParam;
 
 		resQueue->enqueue(pResponseData);
 	}
@@ -66,12 +68,14 @@ namespace Communication {
 
 			DEBUG_PRINT("recv >>>");
 			RequestParam* pRequestParam = new RequestParam;
+			DEBUG_PRINT("%p\n", (void *)pRequestParam);
 			memset(pRequestParam, 0x00, sizeof(RequestParam));
 
 			int n = recv(this->recvSoc, (char*)pRequestParam, sizeof(int32_t) + sizeof(int32_t), 0);
-			DEBUG_PRINT("recv <<<");
+			DEBUG_PRINT("recv [%d]<<<", n);
 			DEBUG_PRINT("cmdType[%d] ", pRequestParam->cmdType);
 			DEBUG_PRINT("dataSize[%d] ", pRequestParam->dataSize);
+			assert(pRequestParam->dataSize != 0);
 
 			pRequestParam->data = new char[pRequestParam->dataSize];
 			memset(pRequestParam->data, 0x00, pRequestParam->dataSize);
@@ -81,8 +85,12 @@ namespace Communication {
 			if (n <= 0)
 				break;
 
-			std::thread a = std::thread([&] { responseHandler(pRequestParam); });
+#if true
+			std::thread a = std::thread([&, pRequestParam] { responseHandler(pRequestParam); });
 			a.detach();
+#else
+			responseHandler(pRequestParam);
+#endif
 		}
 	}
 
@@ -125,7 +133,7 @@ namespace Communication {
 				DEBUG_PRINT("recive : size[%d]  bufsize[%d]", n,
 					pResParam->resData.bufsize);
 
-				delete pResParam->resData.buf;
+				delete[] pResParam->resData.buf;
 				delete pResParam;
 			}
 			DEBUG_PRINT("Send Loop End <<< ");

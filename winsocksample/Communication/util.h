@@ -7,4 +7,6 @@ namespace Communication {
 	
 	SOCKET createAcceptSocket(u_short portNum);
 	int recv_allData(SOCKET soc, char* pBuf, int32_t bufSize);
+
+	std::string createDispTimestamp(std::time_t* pTm);
 };

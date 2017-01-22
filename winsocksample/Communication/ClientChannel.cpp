@@ -4,6 +4,8 @@
 #include "ClientChannel.h"
 #include "util.h"
 
+#include <assert.h>
+
 namespace Communication {
 
 	ClientChannel::ClientChannel(int sendPortNum, int recvPortNum, char* ip) {
@@ -35,6 +37,10 @@ namespace Communication {
 
 	int ClientChannel::Send(RequestParam* pRequestParam) {
 		int32_t sendSize = pRequestParam->dataSize + sizeof(int32_t) + sizeof(int32_t);
+		DEBUG_PRINT("sendSize[%d]", sendSize);
+		DEBUG_PRINT("cmdType[%d]",  pRequestParam->cmdType);
+		DEBUG_PRINT("bufSize[%d]",  pRequestParam->dataSize);
+		assert(pRequestParam->dataSize != 0);
 		return send(this->sendSoc, (const char*)pRequestParam, sendSize, 0);
 	}
 

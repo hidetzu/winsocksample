@@ -67,4 +67,14 @@ namespace Communication {
 
 		return 0;
 	}
+
+	std::string createDispTimestamp(std::time_t* pTm) {
+		std::tm tm;
+		localtime_s(&tm, pTm);
+
+		char buffer[32];
+		std::strftime(buffer, 32, "%Y%m%d%H%M%S", &tm);
+
+		return std::string(buffer);
+	}
 };
