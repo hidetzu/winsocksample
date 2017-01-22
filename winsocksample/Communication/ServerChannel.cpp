@@ -10,7 +10,7 @@
 #include <fstream>
 
 namespace Communication {
-	ServerChannel::ServerChannel(int recvPortNum, int sendPortNum, const std::string ip) {
+	ServerChannel::ServerChannel(int recvPortNum, int sendPortNum, std::string ip) {
 		this->recvPortNum = recvPortNum;
 		this->sendPortNum = sendPortNum;
 		this->ip = ip;
@@ -59,7 +59,7 @@ namespace Communication {
 			DEBUG_PRINT("cmdType[%d] ", requestParam.cmdType);
 			DEBUG_PRINT("dataSize[%d] ", requestParam.dataSize);
 
-			n = recv(this->recvSoc, requestParam.data, requestParam.dataSize - sizeof(int32_t) - sizeof(int32_t), 0);
+			n = recv(this->recvSoc, requestParam.data, requestParam.dataSize, 0);
 			DEBUG_PRINT("recv recvSize[%d]", n);
 			if (n <= 0)
 				break;

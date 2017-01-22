@@ -8,7 +8,7 @@
 
 namespace Communication {
 
-	ClientChannel::ClientChannel(int sendPortNum, int recvPortNum, const std::string ip) {
+	ClientChannel::ClientChannel(int sendPortNum, int recvPortNum, char* ip) {
 		this->sendPortNum = sendPortNum;
 		this->recvPortNum = recvPortNum;
 		this->ip = ip;
@@ -36,7 +36,9 @@ namespace Communication {
 	}
 
 	int ClientChannel::Send(RequestParam* pRequestParam) {
-		send(this->sendSoc, (const char*)pRequestParam, pRequestParam->dataSize, 0);
+		int32_t sendSize = pRequestParam->dataSize + sizeof(int32_t) + sizeof(int32_t);
+		send(this->sendSoc, (const char*)pRequestParam, sendSize, 0);
+
 		DEBUG_PRINT("wait recive >>>>");
 
 		ResponseParam* response = this->resQueue->dequeue();

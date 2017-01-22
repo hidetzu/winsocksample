@@ -19,9 +19,9 @@ int __stdcall communication_finalize(void)
 	return 0;
 }
 
-void* __stdcall communication_serverInit(int recvPortNum, int sendPortNum, const char* ip)
+void* __stdcall communication_serverInit(ConfigParam* pParam)
 {
-	return new Communication::ServerChannel(recvPortNum, sendPortNum, ip);
+	return new Communication::ServerChannel(pParam->recvPortNum, pParam->sendPortNum, pParam->ip);
 }
 
 int __stdcall communication_serverFinalize(void* pContext)
@@ -32,21 +32,16 @@ int __stdcall communication_serverFinalize(void* pContext)
 	return 0;
 }
 
-void* __stdcall communication_clientInit(int sendPortNum, int recvPortNum, const char* ip)
+void* __stdcall communication_clientInit(ConfigParam* pParam)
 {
-	return new Communication::ClientChannel(15000, 15001, "127.0.0.1");
+	return new Communication::ClientChannel(pParam->sendPortNum, pParam->recvPortNum, pParam->ip);
 }
 
-int __stdcall communication_clientSend(void* pContext, char* pData, int dataSize) {
+int __stdcall communication_clientSend(void* pContext, RequestParam* pReqParam) {
 	Communication::ClientChannel* inst =
 		(Communication::ClientChannel*)pContext;
-	RequestParam reqParam;
 
-	reqParam.cmdType  = (int32_t)CommandType::Pram1;
-	reqParam.dataSize = dataSize + sizeof(int32_t) + sizeof(int32_t);
-	memcpy(reqParam.data, pData, dataSize);
-
-	return inst->Send(&reqParam);
+	return inst->Send(pReqParam);
 }
 
 int __stdcall communication_clientFinalize(void* pContext)

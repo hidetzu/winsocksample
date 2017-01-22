@@ -7,12 +7,24 @@
 
 
 void sendThread() {
-	void* pContext = communication_clientInit(15000, 15001, "127.0.0.1");
+	ConfigParam configParam;
+	configParam.recvPortNum = 15001;
+	configParam.sendPortNum = 15000;
+	configParam.ip = "127.0.0.1";
+	void* pContext = communication_clientInit(&configParam);
 
 	while(true) {
 		printf("[%s] start\n", __func__);
-		communication_clientSend(pContext, "CELLO", 5);
+
+		RequestParam reqParam;
+		reqParam.cmdType = (int32_t)CommandType::Pram1;
+
+		reqParam.dataSize = 5;
+		memcpy(reqParam.data, "HELLO", 5);
+
+		communication_clientSend(pContext, &reqParam);
 		std::this_thread::sleep_for(std::chrono::seconds(1));
+
 		printf("[%s] end\n", __func__);
 	}
 

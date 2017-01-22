@@ -12,7 +12,7 @@ namespace Communication {
 	class ClientChannel{
 
 	public:
-		ClientChannel(int sendPortNum, int recvPortNum, const std::string ip);
+		ClientChannel(int sendPortNum, int recvPortNum,  char* ip);
 
 		int Send(RequestParam* pRequestParam);
 
