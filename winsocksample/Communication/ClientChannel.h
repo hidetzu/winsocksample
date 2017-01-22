@@ -30,11 +30,6 @@ namespace Communication {
 		std::condition_variable cond_;
 		int cond_val;
 
-		std::mutex recvMutex_;
-		std::condition_variable recvCond_;
-		std::vector<ResponseParam*> response;
-		int recvCond_val;
-
 		SafeQueue< std::vector<ResponseParam*> >* resQueue;
 
 		std::thread recvThread;

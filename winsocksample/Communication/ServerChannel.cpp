@@ -72,7 +72,6 @@ namespace Communication {
 			ResponseParam* pResponseData = new ResponseParam;
 			pResponseData->cmdType = 0;
 			pResponseData->result = 0;
-			pResponseData->resData.continueFlg = 0;
 			pResponseData->resData.buf = new char[fileSize];
 			pResponseData->resData.bufsize = (int32_t)fileSize;
 			fin.read(pResponseData->resData.buf, fileSize);
@@ -144,13 +143,12 @@ namespace Communication {
 				while (it != response.end()) {
 					auto pResParam = *it;
 					pResParam->cmdType = (int32_t)CommandType::Pram1;
-					int n = send(this->sendSoc, (char*)(pResParam), sizeof(CommandType) + 4 + 4 + 4, 0);
-					DEBUG_PRINT("recive : size[%d] continueFlg[%d] bufsize[%d]", n,
-						pResParam->resData.continueFlg,
+					int n = send(this->sendSoc, (char*)(pResParam), sizeof(CommandType) + 4 + 4, 0);
+					DEBUG_PRINT("recive : size[%d] result[%d] bufsize[%d]", n,
+						pResParam->result,
 						pResParam->resData.bufsize);
 					n = send(this->sendSoc, (char*)(pResParam->resData.buf), pResParam->resData.bufsize, 0);
-					DEBUG_PRINT("recive : size[%d] continueFlg[%d] bufsize[%d]", n,
-						pResParam->resData.continueFlg,
+					DEBUG_PRINT("recive : size[%d]  bufsize[%d]", n,
 						pResParam->resData.bufsize);
 
 					delete pResParam->resData.buf;

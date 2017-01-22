@@ -24,7 +24,6 @@ struct RequestParam {
 };
 
 struct ResponseData {
-	int32_t   continueFlg;
 	int32_t   bufsize;
 	char*     buf;
 };

@@ -39,31 +39,22 @@ namespace Communication {
 		send(this->sendSoc, (const char*)pRequestParam, pRequestParam->dataSize, 0);
 		DEBUG_PRINT("wait recive >>>>");
 
+		std::vector<ResponseParam*> response = this->resQueue->dequeue();
 
-		// 受信側が通信できるようになるまで待つ
-		{
-			std::unique_lock<std::mutex> uniq_lk(recvMutex_);
-			recvCond_.wait(uniq_lk, [this] { return 1 == recvCond_val; });
-			recvCond_val = 0;
-			DEBUG_PRINT("recive startt >>>>");
+		// 受信内容を取り出す
+		std::ofstream  fout;
+		fout.open("./recv.jpg", std::ios::out | std::ios::binary | std::ios::trunc);
 
-			// 受信内容を取り出す
-			std::ofstream  fout;
-			fout.open("./recv.jpg", std::ios::out | std::ios::binary | std::ios::trunc);
+		std::vector<ResponseParam*>::iterator it = response.begin();
+		while (it != response.end()) {
+			auto pResData = *it;
+			fout.write(reinterpret_cast<char *>(pResData->resData.buf), pResData->resData.bufsize);
 
-			std::vector<ResponseParam*>::iterator it = this->response.begin();
-			while (it != this->response.end()) {
-				auto pResData = *it;
-				fout.write(reinterpret_cast<char *>(pResData->resData.buf), pResData->resData.bufsize);
-
-				delete pResData->resData.buf;
-				delete pResData;
-				it = this->response.erase(it);
-			}
-			DEBUG_PRINT("recive end <<<");
-
+			delete pResData->resData.buf;
+			delete pResData;
+			it = response.erase(it);
 		}
-
+		DEBUG_PRINT("recive end <<<");
 		DEBUG_PRINT("END");
 
 		return 0;
@@ -84,40 +75,30 @@ namespace Communication {
 		while (true) {
 			// 受信データがそろったらクライアントへ通知する
 			DEBUG_PRINT("recive loop start >>>>");
-			{
-				while(true) {
-					ResponseParam* pResponseData = new ResponseParam;
-					memset(pResponseData, 0, sizeof(ResponseParam));
-					std::lock_guard<std::mutex> lock(recvMutex_);
 
-					DEBUG_PRINT("recive start >>>>");
+			std::vector<ResponseParam*> response;
+			ResponseParam* pResponseData = new ResponseParam;
+			memset(pResponseData, 0, sizeof(ResponseParam));
+			DEBUG_PRINT("recive start >>>>");
 
+			int n = recv(this->recvSoc, (char*)(pResponseData),
+				sizeof(int32_t) + sizeof(int32_t) + sizeof(int32_t), 0);
 
-					int n = recv(this->recvSoc, (char*)(pResponseData),
-						sizeof(int32_t) + sizeof(int32_t) + sizeof(int32_t) + sizeof(int32_t), 0);
+			ResponseData* pResData = &pResponseData->resData;
 
-					ResponseData* pResData = &pResponseData->resData;
+			DEBUG_PRINT("recive : size[%d] commandType[%d] result[%d] bufsize[%d]", n,
+				(pResponseData->cmdType),
+				(pResponseData->result),
+				(pResData->bufsize));
 
-					DEBUG_PRINT("recive : size[%d] commandType[%d] continueFlg[%d] bufsize[%d]", n,
-						(pResponseData->cmdType),
-						(pResData->continueFlg),
-						(pResData->bufsize));
+			pResData->buf = new char[pResData->bufsize];
 
-					pResData->buf = new char[pResData->bufsize];
+			recv_allData(this->recvSoc,
+				pResponseData->resData.buf, pResData->bufsize);
 
-					recv_allData(this->recvSoc,
-						pResponseData->resData.buf, pResData->bufsize);
+			response.push_back(pResponseData);
+			this->resQueue->enqueue(response);
 
-					this->response.push_back(pResponseData);
-
-					// 残りのデータがないので処理をやめる
-					if (pResponseData->resData.continueFlg == 0)
-						break;
-				}
-
-				recvCond_val = 1;
-			}
-			recvCond_.notify_one();
 			DEBUG_PRINT("recive loop end <<<");
 		}
 
