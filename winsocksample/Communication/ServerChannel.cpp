@@ -59,11 +59,15 @@ namespace Communication {
 			DEBUG_PRINT("cmdType[%d] ", requestParam.cmdType);
 			DEBUG_PRINT("dataSize[%d] ", requestParam.dataSize);
 
+			requestParam.data = new char[requestParam.dataSize];
+			memset(requestParam.data, 0x00, requestParam.dataSize);
+
 			n = recv(this->recvSoc, requestParam.data, requestParam.dataSize, 0);
 			DEBUG_PRINT("recv recvSize[%d]", n);
 			if (n <= 0)
 				break;
 
+			delete[] requestParam.data;
 			std::ifstream fin("./dambo3.jpg", std::ios::in | std::ios::binary);
 			size_t fileSize = (size_t)fin.seekg(0, std::ios::end).tellg();
 			fin.seekg(0, std::ios::beg);

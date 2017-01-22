@@ -15,6 +15,7 @@ namespace Communication {
 		ClientChannel(int sendPortNum, int recvPortNum,  char* ip);
 
 		int Send(RequestParam* pRequestParam);
+		ResponseParam* Recv(void);
 
 		~ClientChannel();
 	private:

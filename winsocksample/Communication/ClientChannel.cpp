@@ -37,26 +37,17 @@ namespace Communication {
 
 	int ClientChannel::Send(RequestParam* pRequestParam) {
 		int32_t sendSize = pRequestParam->dataSize + sizeof(int32_t) + sizeof(int32_t);
-		send(this->sendSoc, (const char*)pRequestParam, sendSize, 0);
+		return send(this->sendSoc, (const char*)pRequestParam, sendSize, 0);
+	}
 
-		DEBUG_PRINT("wait recive >>>>");
-
-		ResponseParam* response = this->resQueue->dequeue();
-
-		// óM“à—e‚ğæ‚èo‚·
-		std::ofstream  fout;
-		fout.open("./recv.jpg", std::ios::out | std::ios::binary | std::ios::trunc);
-
-		auto pResData = response;
-		fout.write(reinterpret_cast<char *>(pResData->resData.buf), pResData->resData.bufsize);
-		delete pResData->resData.buf;
-		delete pResData;
-
+	ResponseParam* ClientChannel::Recv(void) {
+		auto response = this->resQueue->dequeue();
 		DEBUG_PRINT("recive end <<<");
 		DEBUG_PRINT("END");
 
-		return 0;
+		return response;
 	}
+
 
 	void ClientChannel::recvThreadProc() {
 		DEBUG_PRINT("Start");

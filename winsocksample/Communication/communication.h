@@ -20,7 +20,7 @@ enum CommandType {
 struct RequestParam {
 	int32_t cmdType;
 	int32_t dataSize;
-	char    data[5];
+	char*   data;
 };
 
 struct ResponseData {
@@ -48,4 +48,4 @@ DLL_API int __stdcall communication_serverFinalize(void* pContext);
 
 DLL_API void* __stdcall communication_clientInit(ConfigParam* pParam);
 DLL_API int __stdcall communication_clientFinalize(void* pContext);
-DLL_API int __stdcall communication_clientSend(void* pContext, RequestParam* pReqParam);
+DLL_API int __stdcall communication_clientSend(void* pContext, RequestParam* pReqParam, ResponseParam** ppResParam);

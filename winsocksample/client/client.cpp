@@ -1,10 +1,17 @@
 // client.cpp : コンソール アプリケーションのエントリ ポイントを定義します。
 //
 
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h> 
+#include <ctime>
+#include <time.h>
 
+#include <iostream>
 #include <thread>
 #include "communication.h"
 
+#include <fstream>
 
 void sendThread() {
 	ConfigParam configParam;
@@ -17,15 +24,40 @@ void sendThread() {
 		printf("[%s] start\n", __func__);
 
 		RequestParam reqParam;
+		ResponseParam* pResParam;
 		reqParam.cmdType = (int32_t)CommandType::Pram1;
 
 		reqParam.dataSize = 5;
+		reqParam.data = new char[5];
 		memcpy(reqParam.data, "HELLO", 5);
 
-		communication_clientSend(pContext, &reqParam);
+
+		communication_clientSend(pContext, &reqParam, &pResParam);
+		char a = pResParam->resData.buf[pResParam->resData.bufsize - 1];
+
+
+		std::time_t now = std::time(NULL);
+		std::tm tm;
+		localtime_s(&tm, &now);
+
+		char buffer[32];
+		std::strftime(buffer, 32, "%d_%m_%Y_%H_%M_%S", &tm);
+
+		// 受信内容を取り出す
+		std::ofstream  fout;
+		fout.open("./recv_" + std::string(buffer) + ".jpg", std::ios::out | std::ios::binary | std::ios::trunc);
+
+		auto pResData = pResParam;
+		fout.write(reinterpret_cast<char *>(pResData->resData.buf), pResData->resData.bufsize);
+		delete pResData->resData.buf;
+		delete pResData;
+
+
+		printf("[%s] recive end <<<\n", __func__);
+
+		delete[] reqParam.data;
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 
-		printf("[%s] end\n", __func__);
 	}
 
 	communication_clientFinalize(pContext);
@@ -35,6 +67,8 @@ void sendThread() {
 
 int main()
 {
+	_CrtDumpMemoryLeaks();
+
 	communication_init();
 
 	std::thread th(sendThread);

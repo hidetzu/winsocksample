@@ -1,10 +1,16 @@
 // winsocksample.cpp : コンソール アプリケーションのエントリ ポイントを定義します。
 //
 
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h> 
+
 #include <stdio.h>
 #include "communication.h"
 
 int main() {
+	_CrtDumpMemoryLeaks();
+
 	communication_init();
 
 	ConfigParam configParam;
