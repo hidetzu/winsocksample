@@ -10,7 +10,6 @@
 #include <condition_variable>
 
 #ifdef DEBUG
-
 #define DEBUG_PRINT(fmt, ...)                                                            \
 				do {                                                                     \
 					fprintf(stdout, "[%s]:%d: " fmt, __func__, __LINE__, ##__VA_ARGS__); \

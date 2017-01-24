@@ -48,8 +48,9 @@ namespace Communication {
 
 
 	void ServerChannel::recvThreadProc() {
-
-		this->recvSoc = createAcceptSocket(this->recvPortNum);
+		auto soc = createServerSocket(this->recvPortNum);
+		this->recvSoc = createAcceptSocket(soc);
+		DEBUG_PRINT("start heeeeee");
 
 		// 受信側の準備が完了したことを通知する
 		{
@@ -107,6 +108,8 @@ namespace Communication {
 
 		this->sendSoc =
 			createSendSocket(this->sendPortNum, this->ip);
+
+		DEBUG_PRINT("Server sendSoc[%d]", this->sendSoc);
 
 		// 送信側の準備が完了したことを通知する
 		{

@@ -14,18 +14,26 @@ namespace Communication {
 		this->ip = ip;
 		this->cond_val = -1;
 
-		recvThread = std::thread([this] { recvThreadProc(); });
-
-		this->sendSoc = 
-			createSendSocket(this->sendPortNum,this->ip);
-
 		this->resQueue = new SafeQueue< ResponseParam* >();
 
-		// 受信側が通信できるようになるまで待つ
+		recvThread = std::thread([this] { recvThreadProc(); });
+
+		// 受信側のコネクト待ちをまつ。
 		{
 			std::unique_lock<std::mutex> uniq_lk(mutex_);
 			cond_.wait(uniq_lk, [this] { return 0 == cond_val; });
 		}
+
+		this->sendSoc = 
+			createSendSocket(this->sendPortNum,this->ip);
+
+		// 受信側が通信できるようになるまで待つ
+		{
+			std::unique_lock<std::mutex> uniq_lk(mutex_);
+			cond_.wait(uniq_lk, [this] { return 1 == cond_val; });
+		}
+
+		DEBUG_PRINT("sendSoc[%d]", this->sendSoc);
 
 		DEBUG_PRINT("END");
 	}
@@ -56,12 +64,23 @@ namespace Communication {
 	void ClientChannel::recvThreadProc() {
 		DEBUG_PRINT("Start");
 
-		this->recvSoc = createAcceptSocket(this->recvPortNum);
+		std::this_thread::sleep_for(std::chrono::seconds(5));
+
+		auto listenSoc = createServerSocket(this->recvPortNum);
+
+		// 受信側のコネクト待ちを通知する
+		{
+			std::lock_guard<std::mutex> lock(mutex_);
+			cond_val = 0;
+		}
+		cond_.notify_one();
+
+		this->recvSoc = createAcceptSocket(listenSoc);
 
 		// 受信側の準備が完了したことを通知する
 		{
 			std::lock_guard<std::mutex> lock(mutex_);
-			cond_val = 0;
+			cond_val = 1;
 		}
 		cond_.notify_one();
 

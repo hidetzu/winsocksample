@@ -22,14 +22,10 @@ namespace Communication {
 		return soc;
 	}
 
-	SOCKET createAcceptSocket(u_short portNum) {
-		DEBUG_PRINT("Start");
-
+	SOCKET createServerSocket(u_short portNum) {
 		SOCKET sock;
-		SOCKET acSock;
 
 		struct sockaddr_in addr;
-		struct sockaddr_in client;
 		int len;
 
 		// ソケットの作成
@@ -47,10 +43,22 @@ namespace Communication {
 		listen(sock, 5);
 		DEBUG_PRINT("listen portNum[%d]", portNum);
 
+		return sock;
+	}
+
+	SOCKET createAcceptSocket(SOCKET listenSoc) {
+		DEBUG_PRINT("Start");
+		SOCKET acSock;
+
+		struct sockaddr_in client;
+		int len;
+
 		// TCPクライアントからの接続要求を受け付ける
 		len = sizeof(client);
-
-		acSock = accept(sock, (struct sockaddr *)&client, &len);
+		acSock = accept(listenSoc, (struct sockaddr *)&client, &len);
+		if (acSock == -1) {
+			DEBUG_PRINT("accept error[%d]", WSAGetLastError());
+		}
 		DEBUG_PRINT("End accept[%d]", (int)acSock);
 		return acSock;
 	}
