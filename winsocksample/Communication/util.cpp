@@ -45,7 +45,7 @@ namespace Communication {
 
 		// TCPクライアントからの接続要求を待てる状態にする
 		listen(sock, 5);
-		DEBUG_PRINT("listen");
+		DEBUG_PRINT("listen portNum[%d]", portNum);
 
 		// TCPクライアントからの接続要求を受け付ける
 		len = sizeof(client);
