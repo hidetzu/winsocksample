@@ -6,6 +6,15 @@
 
 #include <assert.h>
 
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_sinks.h>
+#include <spdlog/sinks/file_sinks.h>
+
+using spdlog::sinks::stdout_sink_mt;
+using spdlog::sinks::simple_file_sink_mt;
+using spdlog::sinks::rotating_file_sink_mt;
+using spdlog::create;
+
 namespace Communication {
 
 	ClientChannel::ClientChannel(int sendPortNum, int recvPortNum, char* ip) {
@@ -15,6 +24,16 @@ namespace Communication {
 		this->cond_val = -1;
 
 		this->resQueue = new SafeQueue< ResponseParam* >();
+
+		auto my_logger = spdlog::basic_logger_mt("basic_logger", "basic.txt");
+		spdlog::set_level(spdlog::level::info);
+		my_logger->info("Some log message");
+		my_logger->info("Some log message2");
+		my_logger->info("Some log message3");
+		my_logger->info("Some log message4");
+		my_logger->info("Some log message5");
+		my_logger->info("Some log message6");
+		my_logger->info("Some log message7");
 
 		recvThread = std::thread([this] { recvThreadProc(); });
 
@@ -33,9 +52,8 @@ namespace Communication {
 			cond_.wait(uniq_lk, [this] { return 1 == cond_val; });
 		}
 
-		DEBUG_PRINT("sendSoc[%d]", this->sendSoc);
-
-		DEBUG_PRINT("END");
+		my_logger->debug("sendSoc[%d]", this->sendSoc);
+		my_logger->debug("End");
 	}
 
 	ClientChannel::~ClientChannel() {
