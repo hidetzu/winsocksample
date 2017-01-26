@@ -5,15 +5,17 @@
 #include <stdlib.h>
 #include <crtdbg.h> 
 
+
 #include <ctime>
 #include <time.h>
 
-#include <iostream>
 #include <thread>
-#include "communication.h"
-
+#include <iostream>
 #include <fstream>
 
+#include <spdlog/spdlog.h>
+#include "communication.h"
+#include "ClientChannel.h"
 
 void sendThread() {
 	ConfigParam configParam;

@@ -14,6 +14,8 @@ namespace Communication {
 		int SendRecv(RequestParam* pRequestParam, ResponseParam** ppResParam);
 
 		~ClientChannel();
+
+		static std::string LoggerName();
 	private:
 		int sendPortNum;
 		int recvPortNum;

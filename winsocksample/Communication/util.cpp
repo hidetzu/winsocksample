@@ -1,4 +1,6 @@
 
+#include <spdlog/spdlog.h>
+
 #include "common_private.h"
 
 namespace Communication {
