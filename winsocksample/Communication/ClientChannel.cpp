@@ -7,10 +7,10 @@
 #include <assert.h>
 
 namespace Communication {
+	const std::string myLoggerName = "com_server";
 
 	ClientChannel::ClientChannel(int sendPortNum, int recvPortNum, char* ip) {
-		my_logger = spdlog::basic_logger_mt("basic_logger", "client.txt");
-		my_logger->set_level(spdlog::level::debug);
+		my_logger = spdlog::get(myLoggerName);
 		this->sendPortNum = sendPortNum;
 		this->recvPortNum = recvPortNum;
 		this->ip = ip;
@@ -19,6 +19,11 @@ namespace Communication {
 		auto listenSoc = createServerSocket(this->recvPortNum);
 		this->recvSoc = createAcceptSocket(listenSoc);
 
+	}
+
+	std::string ClientChannel::LoggerName()
+	{
+		return myLoggerName;
 	}
 
 	ClientChannel::~ClientChannel() {

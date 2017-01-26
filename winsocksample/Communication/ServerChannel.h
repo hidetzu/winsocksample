@@ -17,6 +17,8 @@ namespace Communication {
 	public:
 		ServerChannel(int recvPortNum, int sendPortNum, const std::string ip, t_createResponseParam createResParam);
 		~ServerChannel();
+		static std::string ServerChannel::LoggerName();
+
 	private:
 		t_createResponseParam createResParam_;
 		int recvPortNum;
@@ -33,13 +35,13 @@ namespace Communication {
 		std::condition_variable cond_;
 		int cond_val;
 
-		std::shared_ptr<spdlog::logger> my_logger = spdlog::basic_logger_mt("basic_logger", "server.txt");
-
 		SafeQueue< ResponseParam* >* resQueue;
 
 		void recvThreadProc();
-		void sendThreadProc();
 
 		void responseHandler(RequestParam* pRequestParam);
+
+
+		std::shared_ptr<spdlog::logger> my_logger;
 	};
 }

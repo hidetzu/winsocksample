@@ -9,8 +9,10 @@
 #include "util.h"
 
 namespace Communication {
-	ServerChannel::ServerChannel(int recvPortNum, int sendPortNum, const std::string ip, t_createResponseParam createResParam) {
+	const std::string myLoggerName = "com_server";
 
+	ServerChannel::ServerChannel(int recvPortNum, int sendPortNum, const std::string ip, t_createResponseParam createResParam) {
+		my_logger = spdlog::get(myLoggerName);
 		this->createResParam_ = createResParam;
 		this->recvPortNum = recvPortNum;
 		this->sendPortNum = sendPortNum;
@@ -31,6 +33,11 @@ namespace Communication {
 		if (this->resQueue != nullptr) {
 			delete this->resQueue;
 		}
+	}
+
+	std::string ServerChannel::LoggerName()
+	{
+		return myLoggerName;
 	}
 
 	void ServerChannel::responseHandler(RequestParam* pRequestParam) {
