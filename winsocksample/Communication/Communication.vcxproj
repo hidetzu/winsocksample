@@ -162,6 +162,7 @@
     <ClInclude Include="ClientChannel.h" />
     <ClInclude Include="common_private.h" />
     <ClInclude Include="communication.h" />
+    <ClInclude Include="communication_command.h" />
     <ClInclude Include="SafeQueue.h" />
     <ClInclude Include="ServerChannel.h" />
     <ClInclude Include="util.h" />

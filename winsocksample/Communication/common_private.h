@@ -17,7 +17,7 @@
 				} while (0);
 #else
 
-#define DEBUG_PRINT(fmt, ...)                                                            \
+#define DEBUG_PRINT(fmt, ...)                                                            
 
 #endif
 

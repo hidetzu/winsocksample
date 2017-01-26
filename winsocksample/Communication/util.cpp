@@ -63,7 +63,7 @@ namespace Communication {
 		return acSock;
 	}
 
-	int recv_allData(SOCKET soc, char* pBuf, int32_t bufSize) {
+	int recv_allData(SOCKET soc, char* pBuf, int64_t bufSize) {
 		int length = 0;
 		while(length < bufSize) {
 			DEBUG_PRINT("recive start >>>>");

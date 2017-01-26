@@ -1,11 +1,12 @@
 
+#include <stdlib.h>
+#include <string.h>
+#include <spdlog/spdlog.h>
+
 #include "communication.h"
 #include "common_private.h"
 #include "ServerChannel.h"
 #include "util.h"
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
 
 namespace Communication {
 	ServerChannel::ServerChannel(int recvPortNum, int sendPortNum, const std::string ip, t_createResponseParam createResParam) {
@@ -16,10 +17,11 @@ namespace Communication {
 		this->ip = ip;
 		this->cond_val = -1;
 
-		this->resQueue = new SafeQueue< ResponseParam* >();
-
 		recvThread = std::thread([this] { recvThreadProc(); });
-		sendThread = std::thread([this] { sendThreadProc(); });
+		{
+			std::unique_lock<std::mutex> uniq_lk(mutex_);
+			cond_.wait(uniq_lk, [this] { return 0 == cond_val; });
+		}
 	}
 
 	ServerChannel::~ServerChannel() {
@@ -32,25 +34,43 @@ namespace Communication {
 	}
 
 	void ServerChannel::responseHandler(RequestParam* pRequestParam) {
-		assert(pRequestParam->dataSize != 0);
 		auto callback = this->createResParam_;
 		ResponseParam* pResponseData = nullptr;
+
+		std::this_thread::sleep_for(std::chrono::seconds(5));
 
 		if (callback != nullptr) {
 			pResponseData = this->createResParam_(pRequestParam);
 		}
 
+		my_logger->debug("cmdType[{}]", pRequestParam->cmdType);
+
 		delete[] pRequestParam->data;
 		delete   pRequestParam;
 
-		resQueue->enqueue(pResponseData);
+		auto pResParam = pResponseData;
+		{
+			int n = send(this->sendSoc, (char*)(pResParam),
+				Command_GetResponseParamHeaderSize(), 0);
+			my_logger->debug("send : size[{}] result[{}] bufsize[{}]", n,
+				pResParam->result,
+				pResParam->resData.bufsize);
+			n = send(this->sendSoc, (char*)(pResParam->resData.buf), pResParam->resData.bufsize, 0);
+			my_logger->debug("send : size[{}]  bufsize[{}]", n,
+				pResParam->resData.bufsize);
+
+			delete[] pResParam->resData.buf;
+			delete pResParam;
+		}
+		my_logger->debug("Send Loop End <<< ");
 	}
 
 
 	void ServerChannel::recvThreadProc() {
 		auto soc = createServerSocket(this->recvPortNum);
 		this->recvSoc = createAcceptSocket(soc);
-		DEBUG_PRINT("start heeeeee");
+		this->sendSoc =
+			createSendSocket(this->sendPortNum, this->ip);
 
 		// 受信側の準備が完了したことを通知する
 		{
@@ -59,30 +79,20 @@ namespace Communication {
 		}
 		cond_.notify_one();
 
-		// 送信側が通信できるようになるまで待つ
-		{
-			std::unique_lock<std::mutex> uniq_lk(mutex_);
-			cond_.wait(uniq_lk, [this] { return 1 == cond_val; });
-		}
-
 		while (true) {
-
-			DEBUG_PRINT("recv >>>");
 			RequestParam* pRequestParam = new RequestParam;
-			DEBUG_PRINT("%p\n", (void *)pRequestParam);
 			memset(pRequestParam, 0x00, sizeof(RequestParam));
 
-			int n = recv(this->recvSoc, (char*)pRequestParam, sizeof(int32_t) + sizeof(int32_t), 0);
-			DEBUG_PRINT("recv [%d]<<<", n);
-			DEBUG_PRINT("cmdType[%d] ", pRequestParam->cmdType);
-			DEBUG_PRINT("dataSize[%d] ", pRequestParam->dataSize);
-			assert(pRequestParam->dataSize != 0);
+			int n = recv(this->recvSoc, (char*)pRequestParam, Command_GetRequestParamHeaderSize(), 0);
+			my_logger->debug("recv [{}]<<<", n);
+			my_logger->debug("cmdType[{}] ", pRequestParam->cmdType);
+			my_logger->debug("dataSize[{}] ", pRequestParam->dataSize);
 
 			pRequestParam->data = new char[pRequestParam->dataSize];
 			memset(pRequestParam->data, 0x00, pRequestParam->dataSize);
 
 			n = recv(this->recvSoc, pRequestParam->data, pRequestParam->dataSize, 0);
-			DEBUG_PRINT("recv recvSize[%d]", n);
+			my_logger->debug("recv recvSize[{}]", n);
 			if (n <= 0)
 				break;
 
@@ -95,51 +105,4 @@ namespace Communication {
 		}
 	}
 
-	void ServerChannel::sendThreadProc() {
-
-		DEBUG_PRINT("pripare recv Connection  ...");
-		// 受信側が通信できるようになるまで待つ
-		{
-			std::unique_lock<std::mutex> uniq_lk(mutex_);
-			cond_.wait(uniq_lk, [this] { return 0 == cond_val; });
-		}
-
-		DEBUG_PRINT("Start");
-
-		this->sendSoc =
-			createSendSocket(this->sendPortNum, this->ip);
-
-		DEBUG_PRINT("Server sendSoc[%d]", this->sendSoc);
-
-		// 送信側の準備が完了したことを通知する
-		{
-			std::lock_guard<std::mutex> lock(mutex_);
-			cond_val = 1;
-		}
-		cond_.notify_one();
-
-		DEBUG_PRINT("End");
-
-		while (true) {
-			DEBUG_PRINT("Send Loop Start >>>");
-
-			// 送信データの準備ができるまで待つ。
-			auto pResParam = this->resQueue->dequeue();
-			{
-				DEBUG_PRINT("recv sendResponse");
-
-				int n = send(this->sendSoc, (char*)(pResParam), sizeof(CommandType) + 4 + 4, 0);
-				DEBUG_PRINT("recive : size[%d] result[%d] bufsize[%d]", n,
-					pResParam->result,
-					pResParam->resData.bufsize);
-				n = send(this->sendSoc, (char*)(pResParam->resData.buf), pResParam->resData.bufsize, 0);
-				DEBUG_PRINT("recive : size[%d]  bufsize[%d]", n,
-					pResParam->resData.bufsize);
-
-				delete[] pResParam->resData.buf;
-				delete pResParam;
-			}
-			DEBUG_PRINT("Send Loop End <<< ");
-		}
-	}
 }

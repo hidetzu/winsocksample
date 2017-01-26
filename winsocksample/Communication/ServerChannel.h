@@ -10,6 +10,8 @@
 #include "common_private.h"
 #include "SafeQueue.h"
 
+#include <spdlog/spdlog.h>
+
 namespace Communication {
 	class ServerChannel {
 	public:
@@ -30,6 +32,8 @@ namespace Communication {
 		std::mutex mutex_;
 		std::condition_variable cond_;
 		int cond_val;
+
+		std::shared_ptr<spdlog::logger> my_logger = spdlog::basic_logger_mt("basic_logger", "server.txt");
 
 		SafeQueue< ResponseParam* >* resQueue;
 

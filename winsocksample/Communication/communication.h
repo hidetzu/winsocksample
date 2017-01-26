@@ -6,16 +6,15 @@
 #define DLL_API __declspec(dllimport)
 #endif
 
+#include "communication_command.h"
 #include <cstdint>
 
 #pragma comment(lib,"Ws2_32.lib")
 
-
+#if false
 enum CommandType {
 	Pram1,
 };
-
-#define REQUESTDATA_MAX (1 * 1024 * 1000)
 
 struct RequestParam {
 	int32_t cmdType;
@@ -33,6 +32,7 @@ struct ResponseParam {
 	int32_t   result;
 	ResponseData   resData;
 };
+#endif
 
 struct ConfigParam {
 	int sendPortNum;

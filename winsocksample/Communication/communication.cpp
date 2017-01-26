@@ -41,8 +41,7 @@ int __stdcall communication_clientSendRecv(void* pContext, RequestParam* pReqPar
 	Communication::ClientChannel* inst =
 		(Communication::ClientChannel*)pContext;
 
-	int ret = inst->Send(pReqParam);
-	*ppResParam = inst->Recv();
+	int ret = inst->SendRecv(pReqParam, ppResParam);
 
 	DEBUG_PRINT("recive end <<<");
 	DEBUG_PRINT("END");

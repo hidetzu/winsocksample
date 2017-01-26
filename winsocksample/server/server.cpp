@@ -7,6 +7,9 @@
 
 #include <iostream>
 #include <fstream>
+#include <thread>
+#include <ctime>
+
 #include "communication.h"
 
 static ResponseParam* __stdcall createReponse(RequestParam* pReqParam) {
@@ -28,6 +31,7 @@ static ResponseParam* __stdcall createReponse(RequestParam* pReqParam) {
 	return pResponseData;
 }
 
+
 int main() {
 	_CrtDumpMemoryLeaks();
 
@@ -38,7 +42,11 @@ int main() {
 	configParam.sendPortNum = 15001;
 	configParam.ip          = "127.0.0.1";
 
+
 	void* pContext = communication_serverInit(&configParam, createReponse);
+
+	while (1) { }
+
 	communication_serverFinalize(pContext);
 
 	communication_finalize();
