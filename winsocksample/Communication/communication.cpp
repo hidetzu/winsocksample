@@ -30,7 +30,7 @@ int __stdcall communication_finalize(void)
 void* __stdcall communication_serverInit(ConfigParam* pParam, t_createResponseParam createResParam)
 {
 	auto sink1 = std::make_shared<stdout_sink_mt>();
-	auto sink2 = std::make_shared<simple_file_sink_mt>("communication_server.log");
+	auto sink2 = std::make_shared<simple_file_sink_mt>("communication_client.log");
 	auto comClientLogger = create(Communication::ServerChannel::LoggerName(), { sink1, sink2 });
 	comClientLogger->set_level(spdlog::level::debug);
 
